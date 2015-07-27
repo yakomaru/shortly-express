@@ -82,9 +82,32 @@ app.get('/signup',function(req, res){
   res.render('signup');
 });
 
-
 app.get('/login',function(req, res){
   res.render('login');
+});
+
+app.post('/signup',function(req, res){
+  var username = req.body.username;
+  var password = req.body.password;
+  db.knex('users').where('username', '=', username)
+    .then(function(users) {
+      if(users['0']) {
+        res.send('<html>Account Already Exists</html>');
+      } else {
+        new User({'username': username, 'password': password}).save().then(function(createdUser){
+          res.send('<html>Account Created</html>');
+          if (createdUser){
+            console.log(createdUser);
+          }
+          //do something
+        });
+      }
+    });
+  // console.log(req.body); // {username: 'name', password: 'pass'}
+});
+
+app.post('/login',function(req, res){
+
 });
 
 
