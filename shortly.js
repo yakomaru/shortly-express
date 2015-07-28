@@ -1,4 +1,5 @@
 var express = require('express');
+var session = require('express-session')
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
@@ -22,22 +23,39 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.use(session({
+  secret: 'secret',
+  resave: false,
+  saveUninitialized: true
+}));
 
 app.get('/', 
 function(req, res) {
-  res.render('index');
+  if(util.isLoggedIn(req, res)) {
+    res.render('index');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get('/create', 
 function(req, res) {
-  res.render('index');
+  if(util.isLoggedIn(req, res)) {
+    res.render('index');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get('/links', 
 function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.send(200, links.models);
-  });
+  if(util.isLoggedIn(req, res)) {
+    Links.reset().fetch().then(function(links) {
+      res.send(200, links.models);
+    });
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.post('/links', 
@@ -112,7 +130,8 @@ app.post('/login',function(req, res){
     if(user) {
       login.authentication(password, function(success){
         if(success) {
-          res.send('<html>Logged In As ' + username + '</html>');
+          util.createSession(req, res, username);
+          // res.send('<html>Logged In As ' + username + '</html>');
         } else {
           res.send('<html>Incorrect Username Or Password</html>');
         }
