@@ -2,6 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var bcrypt = require('bcrypt-nodejs');
 
 
 var db = require('./app/config');
@@ -92,14 +93,16 @@ app.post('/signup',function(req, res){
   db.knex('users').where('username', '=', username)
     .then(function(users) {
       if(users['0']) {
+        console.log(users['0']);
         res.send('<html>Account Already Exists</html>');
       } else {
-        new User({'username': username, 'password': password}).save().then(function(createdUser){
-          res.send('<html>Account Created</html>');
-          if (createdUser){
-            console.log(createdUser);
-          }
-          //do something
+        bcrypt.genSalt(10, function(err, salt) {
+          bcrypt.hash(password, salt, null, function(err, hash){
+            if(err) console.log(err);
+            new User({'username': username, 'password': hash}).save().then(function(createdUser){
+              res.send('<html>Account Created</html>');
+            });
+          });
         });
       }
     });
