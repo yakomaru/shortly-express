@@ -5,6 +5,21 @@ var Promise = require('bluebird');
 var User = db.Model.extend({
   tableName: 'users',
   hasTimestamps: true,
+  hash: function(cb) {
+    bcrypt.genSalt(10, function(err, salt) {
+      bcrypt.hash(this.attributes.password, salt, null, function(err, hash){
+        if(err) console.log(err);
+        this.attributes.password = hash;
+        cb();
+      }.bind(this));
+    }.bind(this));
+  },
+  authentication: function(givenPassword, cb) {
+    bcrypt.compare(givenPassword, this.attributes.password, function(error, res){
+      cb(res);
+    });
+  }
+
   // initialize: function() {
   //   this.on('creating', function(model, attr, options){
   //     // hash(data, salt, progress, cb)

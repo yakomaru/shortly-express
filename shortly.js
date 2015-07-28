@@ -2,7 +2,6 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-var bcrypt = require('bcrypt-nodejs');
 
 
 var db = require('./app/config');
@@ -93,16 +92,12 @@ app.post('/signup',function(req, res){
   db.knex('users').where('username', '=', username)
     .then(function(users) {
       if(users['0']) {
-        console.log(users['0']);
         res.send('<html>Account Already Exists</html>');
       } else {
-        bcrypt.genSalt(10, function(err, salt) {
-          bcrypt.hash(password, salt, null, function(err, hash){
-            if(err) console.log(err);
-            new User({'username': username, 'password': hash}).save().then(function(createdUser){
-              res.send('<html>Account Created</html>');
-            });
-          });
+        var user = new User({'username': username, 'password': password});
+        user.hash(function(){
+          user.save();
+          res.send('<html>Account Created</html>');
         });
       }
     });
@@ -110,7 +105,29 @@ app.post('/signup',function(req, res){
 });
 
 app.post('/login',function(req, res){
+  var username = req.body.username;
+  var password = req.body.password;
+  var login = new User({'username': username});
+  login.fetch().then(function(user){
+    if(user) {
+      login.authentication(password, function(success){
+        if(success) {
+          res.send('<html>Logged In As ' + username + '</html>');
+        } else {
+          res.send('<html>Incorrect Username Or Password</html>');
+        }
+      });
+    } else {
+      res.send('<html>Username Does Not Exist</html>');
+    }
+  });
 
+ // db.knex('users').where('username', '=', username)
+  //   .then(function(users) {
+  //     if(users['0']) {
+  //       console.log(users['0']);
+  //     }
+  //   });
 });
 
 
